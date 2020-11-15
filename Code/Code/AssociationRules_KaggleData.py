@@ -24,11 +24,12 @@ tiempos.append(t)
     Levantar el CSV
 '''
 #Leer CSV
-data = pd.read_csv('KaggleData_7K.csv')
+data = pd.read_csv('../../Data/KaggleData_All.csv', encoding='utf-8-sig',  engine='python')
 
 
 t = ('Read_CSV_End', time())
 tiempos.append(t)
+print('Ya levante el CSV. Duracion', tiempos[1][1]-tiempos[0][1])
 
 #Ver las primeras 10 filas
 #print(data.head(10))
@@ -86,7 +87,17 @@ market_basket = market_basket.sum().unstack().reset_index().fillna(0).set_index(
             return 1
         
         market_basket = market_basket.applymap(encode_data)
+        
+    Ademas, tambien se debe ejecutar si agruparamos por aisle o department, ya que una cesta puede tener quantity>1 en estos casos 
+        (esto no se da si se agrupa por producto, pues, una regla de negocio dice que no hay dos product_name en una misma cesta)
 '''
+def encode_data(datapoint):
+    if datapoint <= 0:
+        return 0
+    if datapoint >= 1:
+        return 1
+
+market_basket = market_basket.applymap(encode_data)
 
 t = ('Transform_Data_End', time())
 tiempos.append(t)
@@ -103,7 +114,7 @@ tiempos.append(t)
 '''
 t = ('Get_Items_Start', time())
 tiempos.append(t)
-items = apriori(market_basket, min_support=0.015, use_colnames=True)
+items = apriori(market_basket, min_support=0.03, use_colnames=True)
 
 '''
     Con Soporte=3% obtuve 21 productos:
@@ -130,7 +141,7 @@ tiempos.append(t)
 t = ('Get_Rules_Start', time())
 tiempos.append(t)
 
-rules = association_rules(items, metric="lift", min_threshold=0.01)
+rules = association_rules(items, metric="lift", min_threshold=0.02)
 
 #Imprimir reglas: DataFrame
 '''
@@ -164,7 +175,7 @@ for i in range(len(rules)):
         compras.append([str(rules.values[i, j]) for j in range(0, 9)])
 
 #Imprimir compras:List
-'''
+
 for c in compras:
     print('Regla')
     print("     Antecedente: ", c[0].strip("frozenset({'").strip("'})"))
@@ -176,7 +187,7 @@ for c in compras:
     print("     Lift: ", c[6])
     print("     Leverage: ", c[7])
     print("     Conviction: ", c[8])
-'''
+
 
 t = ('Convert_Rules_End', time())
 tiempos.append(t)
@@ -188,5 +199,8 @@ tiempos.append(t)
 
 t = ('End', time())
 tiempos.append(t)
-
+print()
+print()
 print("Tiempo de ejecucion: %0.10f segundos"  % (tiempos[-1][1]-tiempos[0][1]) )
+print()
+print("Cantidad de Reglas: ", len(compras))

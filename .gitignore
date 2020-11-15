@@ -1,2 +1,4 @@
 # Project exclude paths
 /venv/
+/Data/KaggleData_All.csv
+/Data/*
