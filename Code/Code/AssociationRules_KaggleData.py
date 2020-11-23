@@ -23,13 +23,14 @@ tiempos.append(t)
 '''
     Levantar el CSV
 '''
+
 #Leer CSV
-data = pd.read_csv('../../Data/KaggleData_All.csv', encoding='utf-8-sig',  engine='python')
+data = pd.read_csv('../../Data/KaggleData_TrainSet.csv', encoding='utf-8-sig',  engine='python')
 
 
 t = ('Read_CSV_End', time())
 tiempos.append(t)
-print('Ya levante el CSV. Duracion', tiempos[1][1]-tiempos[0][1])
+print("Ya levante el CSV. Duracion %0.10f segundos" %  (tiempos[-1][1]-tiempos[-2][1]))
 
 #Ver las primeras 10 filas
 #print(data.head(10))
@@ -46,21 +47,27 @@ tiempos.append(t)
 #data['Product_Name']=data['Product_Name'].str.strip('')
 
 #Castear una columna
-#data['Order_ID'] = data['Order_ID'].astype('str')
+#data['Order_ID'] = data['Order_ID'].astype('int64')
 
 #Excluir registros (where order_id <> '2000645')
 #data = data[~data['Order_ID'].str.contains('2000645')]
 
 #Solo contemplar registros cuyas compras hayan sido 10am
-#data = data[data['Hour_Of_Day'] == 10]
+#data = data[data['Order_Hour_of_Day'] < 14]
 
 #Excluir registros en los que las compras se hayan realizafdo a las 11am
 #data = data[data['Hour_Of_Day'] != 11]
 
 #print(data)
 
+#Supuesto I
+data = data[data['Order_Hour_of_Day'] >= 7]
+data = data[data['Order_Hour_of_Day'] <= 20]
+
 t = ('Data_Cleaning_End', time())
 tiempos.append(t)
+print("Ya realice la limpieza de Datos. Duracion %0.10f segundos" %  (tiempos[-1][1]-tiempos[-2][1]))
+
 
 #==================================================================================================================================
 '''
@@ -71,7 +78,7 @@ tiempos.append(t)
 t = ('Transform_Data_Start', time())
 tiempos.append(t)
 
-market_basket = data.groupby(['Order_ID', 'Product_Name'])['Quantity']
+market_basket = data.groupby(['Order_ID', 'Product_name'])['Quantity']
 market_basket = market_basket.sum().unstack().reset_index().fillna(0).set_index('Order_ID')
 
 #print(market_basket.head(10))
@@ -91,16 +98,18 @@ market_basket = market_basket.sum().unstack().reset_index().fillna(0).set_index(
     Ademas, tambien se debe ejecutar si agruparamos por aisle o department, ya que una cesta puede tener quantity>1 en estos casos 
         (esto no se da si se agrupa por producto, pues, una regla de negocio dice que no hay dos product_name en una misma cesta)
 '''
-def encode_data(datapoint):
+'''def encode_data(datapoint):
     if datapoint <= 0:
         return 0
     if datapoint >= 1:
         return 1
 
-market_basket = market_basket.applymap(encode_data)
+market_basket = market_basket.applymap(encode_data)'''
 
 t = ('Transform_Data_End', time())
 tiempos.append(t)
+
+print("Ya transforme los datos. Duracion %0.10f segundos" %  (tiempos[-1][1]-tiempos[-2][1]))
 
 #==================================================================================================================================
 '''
@@ -114,7 +123,7 @@ tiempos.append(t)
 '''
 t = ('Get_Items_Start', time())
 tiempos.append(t)
-items = apriori(market_basket, min_support=0.03, use_colnames=True)
+items = apriori(market_basket, min_support=0.020, use_colnames=True)
 
 '''
     Con Soporte=3% obtuve 21 productos:
@@ -126,6 +135,8 @@ items = apriori(market_basket, min_support=0.03, use_colnames=True)
 #print(items)
 t = ('Get_Items_End', time())
 tiempos.append(t)
+
+print("Ya defini los items que cumplen con el soporte. Duracion %0.10f segundos" %  (tiempos[-1][1]-tiempos[-2][1]))
 
 #==================================================================================================================================
 '''
@@ -160,6 +171,8 @@ for i in range(len(rules)):
 
 t = ('Get_Rules_End', time())
 tiempos.append(t)
+
+print("Ya genere las reglas, duracion %0.10f segundos" %  (tiempos[-1][1]-tiempos[-2][1]))
 
 #==================================================================================================================================
 '''
