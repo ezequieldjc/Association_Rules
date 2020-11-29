@@ -3,6 +3,7 @@ import pandas as pd
 from mlxtend.frequent_patterns import apriori
 from mlxtend.frequent_patterns import association_rules
 from time import time
+import re
 
 ''' 
     Este algoritmo permite crear reglas de asociacion, a partir de un csv de la forma:
@@ -25,7 +26,7 @@ tiempos.append(t)
 '''
 
 #Leer CSV
-data = pd.read_csv('../../Data/KaggleData_TrainSet.csv', encoding='utf-8-sig',  engine='python')
+data = pd.read_csv('../../Data/KaggleData_TrainSet_Cluster.csv', encoding='utf-8-sig',  engine='python')
 
 
 t = ('Read_CSV_End', time())
@@ -52,17 +53,25 @@ tiempos.append(t)
 #Excluir registros (where order_id <> '2000645')
 #data = data[~data['Order_ID'].str.contains('2000645')]
 
-#Solo contemplar registros cuyas compras hayan sido 10am
-#data = data[data['Order_Hour_of_Day'] < 14]
-
 #Excluir registros en los que las compras se hayan realizafdo a las 11am
 #data = data[data['Hour_Of_Day'] != 11]
+
+#Solo contemplar registros cuyas compras hayan sido 10am
+#data = data[data['Order_Hour_of_Day'] < 14]
+#data = data[~data['Order_ID'].str.endswith('9')]
+#data = data[~data['Order_ID'].str.endswith('2')]
+#data = data[~data['Order_ID'].str.endswith('7')]
+#data = data[~data['Order_ID'].str.endswith('5')]
+#data = data[~data['Order_ID'].str.endswith('3')]
 
 #print(data)
 
 #Supuesto I
 data = data[data['Order_Hour_of_Day'] >= 7]
 data = data[data['Order_Hour_of_Day'] <= 20]
+
+#Filtros sobre Clusters
+#data = data[data['Cluster_ID'] == 4]
 
 t = ('Data_Cleaning_End', time())
 tiempos.append(t)
@@ -78,6 +87,9 @@ print("Ya realice la limpieza de Datos. Duracion %0.10f segundos" %  (tiempos[-1
 t = ('Transform_Data_Start', time())
 tiempos.append(t)
 
+'''
+    Modificar 'Product_Name' por 'Aisle' o 'Department' en el caso qeu se quiera generar las reglas sobre los pasillos o categorias. En ese caso, habilitar la funcion encode_data 
+'''
 market_basket = data.groupby(['Order_ID', 'Product_name'])['Quantity']
 market_basket = market_basket.sum().unstack().reset_index().fillna(0).set_index('Order_ID')
 
@@ -98,13 +110,13 @@ market_basket = market_basket.sum().unstack().reset_index().fillna(0).set_index(
     Ademas, tambien se debe ejecutar si agruparamos por aisle o department, ya que una cesta puede tener quantity>1 en estos casos 
         (esto no se da si se agrupa por producto, pues, una regla de negocio dice que no hay dos product_name en una misma cesta)
 '''
-'''def encode_data(datapoint):
+def encode_data(datapoint):
     if datapoint <= 0:
         return 0
     if datapoint >= 1:
         return 1
 
-market_basket = market_basket.applymap(encode_data)'''
+market_basket = market_basket.applymap(encode_data)
 
 t = ('Transform_Data_End', time())
 tiempos.append(t)
@@ -152,7 +164,7 @@ print("Ya defini los items que cumplen con el soporte. Duracion %0.10f segundos"
 t = ('Get_Rules_Start', time())
 tiempos.append(t)
 
-rules = association_rules(items, metric="lift", min_threshold=0.02)
+rules = association_rules(items, metric="lift", min_threshold=1.6)
 
 #Imprimir reglas: DataFrame
 '''
