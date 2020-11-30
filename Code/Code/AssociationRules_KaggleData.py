@@ -64,14 +64,14 @@ tiempos.append(t)
 #data = data[~data['Order_ID'].str.endswith('5')]
 #data = data[~data['Order_ID'].str.endswith('3')]
 
-#print(data)
-
 #Supuesto I
 data = data[data['Order_Hour_of_Day'] >= 7]
 data = data[data['Order_Hour_of_Day'] <= 20]
 
 #Filtros sobre Clusters
 #data = data[data['Cluster_ID'] == 4]
+
+#print(data)
 
 t = ('Data_Cleaning_End', time())
 tiempos.append(t)
